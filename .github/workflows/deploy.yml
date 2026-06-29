@@ -37,16 +37,33 @@ jobs:
           # Push to ECR
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Update AWS Lambda Function
+      - name: Update or Create AWS Lambda Function
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           IMAGE_TAG: latest
           LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME }}
+          LAMBDA_ROLE_ARN: ${{ secrets.LAMBDA_ROLE_ARN }}
         run: |
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          echo "Updating Lambda function: $LAMBDA_FUNCTION_NAME with image: $IMAGE_URI"
+          echo "Deploying Lambda function: $LAMBDA_FUNCTION_NAME with image: $IMAGE_URI"
           
-          aws lambda update-function-code \
-            --function-name $LAMBDA_FUNCTION_NAME \
-            --image-uri $IMAGE_URI
+          if aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME > /dev/null 2>&1; then
+            echo "Function exists. Updating..."
+            aws lambda update-function-code \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --image-uri $IMAGE_URI
+          else
+            echo "Function does not exist. Creating..."
+            if [ -z "$LAMBDA_ROLE_ARN" ]; then
+              echo "Error: LAMBDA_ROLE_ARN secret is required to create the function."
+              exit 1
+            fi
+            aws lambda create-function \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --package-type Image \
+              --code ImageUri=$IMAGE_URI \
+              --role $LAMBDA_ROLE_ARN \
+              --timeout 30 \
+              --memory-size 256
+          fi
