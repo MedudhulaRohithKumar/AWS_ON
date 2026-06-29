@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  csr-backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    # Override the default Lambda entrypoint to run uvicorn locally
+    entrypoint: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      # These variables must match what your Lambda function expects
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-instance-rds-extend-local}
+      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - JWT_SECRET=${JWT_SECRET:-local_secret_key_for_testing}
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      - ALLOWED_ORIGINS=*
+    volumes:
+      # Mount AWS credentials so the local Docker container can make boto3 calls
+      - ~/.aws:/root/.aws:ro
+      # (Optional) Mount local code for live reload:
+      # - ./backend:/var/task

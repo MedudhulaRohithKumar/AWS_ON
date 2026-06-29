@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — CSR</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚡</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div class="sidebar-logo-text">
+        <span class="sidebar-logo-name">CSR</span>
+        <span class="sidebar-logo-sub">Admin Panel</span>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Admin</div>
+      <button class="sidebar-item active" data-tab="users">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Users
+      </button>
+      <button class="sidebar-item" data-tab="servers">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+        Servers
+      </button>
+      <button class="sidebar-item" data-tab="activity">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Activity Log
+      </button>
+      <button class="sidebar-item" data-tab="reports">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Extra Hours
+      </button>
+      <button class="sidebar-item" data-tab="leaderboard">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        Leaderboard
+      </button>
+      <div class="sidebar-section" style="margin-top:12px;">Tools</div>
+      <a class="sidebar-item" href="dashboard.html">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        User View
+      </a>
+      <a class="sidebar-item" href="docs.html" target="_blank">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Docs
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" data-user-avatar>A</div>
+        <div class="user-details">
+          <div class="user-name" data-user-name>Admin</div>
+          <div class="user-role" style="color:var(--orange);">admin</div>
+        </div>
+        <button id="logoutBtn" title="Sign out" class="btn-icon btn-ghost" style="font-size:1rem;">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ─────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ─── USERS TAB ──────────────────────────────────────────── -->
+    <div id="tab-users" class="tab-panel active">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">User Management</h1>
+          <p class="page-subtitle">Create and manage portal accounts.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="openAddUserBtn">+ Add User</button>
+      </div>
+      <div class="page-content">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SERVERS TAB ────────────────────────────────────────── -->
+    <div id="tab-servers" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Server Registry</h1>
+          <p class="page-subtitle">Manage which UAT servers are visible to users.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" id="discoverBtn">🔍 Discover from AWS</button>
+          <button class="btn btn-primary btn-sm" id="openAddServerBtn">+ Add Server</button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div id="discoverResults" class="hidden" style="margin-bottom:20px;"></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Instance ID</th><th>Type</th><th>Region</th><th>Added By</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="serversBody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ACTIVITY TAB ───────────────────────────────────────── -->
+    <div id="tab-activity" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Activity Log</h1>
+          <p class="page-subtitle">Full audit trail of all user actions.</p>
+        </div>
+        <input id="activitySearch" class="form-control" style="width:240px;" placeholder="🔍 Search…" />
+      </div>
+      <div class="page-content">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>User</th><th>Action</th><th>Resource</th><th>Details</th><th>Time (IST)</th><th>IP</th></tr></thead>
+            <tbody id="activityBodyAdmin"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── REPORTS TAB ────────────────────────────────────────── -->
+    <div id="tab-reports" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Extra Hours Report</h1>
+          <p class="page-subtitle">Hours instances ran beyond 6 PM shutdown (outside 9 AM–6 PM window).</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="refreshReportBtn">🔄 Refresh</button>
+      </div>
+      <div class="page-content">
+        <!-- Chart -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><div class="card-title">📊 Extra Hours by Instance</div></div>
+          <div id="chartContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <!-- Table -->
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Instance</th><th>Type</th><th>User</th><th>Extended Until</th><th>Status</th><th>Extra Hours</th></tr></thead>
+            <tbody id="reportBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── LEADERBOARD TAB ────────────────────────────────────── -->
+    <div id="tab-leaderboard" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Leaderboard</h1>
+          <p class="page-subtitle">Users ranked by total extra hours of UAT uptime extended.</p>
+        </div>
+      </div>
+      <div class="page-content">
+        <div id="podiumContainer" class="podium" style="margin-bottom:28px;"></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>#</th><th>User</th><th>Total Extensions</th><th>Active Now</th><th>Total Extra Hours</th></tr></thead>
+            <tbody id="leaderboardBody"><tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── Add User Modal ────────────────────────────────────────── -->
+<div id="addUserModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">👤 Add New User</div>
+      <button class="modal-close" data-close="addUserModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input id="newUsername" type="text" class="form-control" placeholder="john.doe" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input id="newEmail" type="email" class="form-control" placeholder="john@company.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input id="newPassword" type="password" class="form-control" placeholder="Min. 8 characters" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select id="newRole" class="form-control">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div id="addUserError" class="form-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="addUserModal">Cancel</button>
+      <button class="btn btn-primary" id="confirmAddUserBtn">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Add Server Modal ──────────────────────────────────────── -->
+<div id="addServerModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🖥 Add Server / DB</div>
+      <button class="modal-close" data-close="addServerModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Display Name</label>
+        <input id="newServerName" type="text" class="form-control" placeholder="UAT-App-Server-1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Instance / DB Identifier</label>
+        <input id="newInstanceId" type="text" class="form-control" placeholder="i-0abc123 or uat-db" />
+        <span class="form-hint">EC2 Instance ID (i-xxx) or RDS DB Identifier</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="newServerType" class="form-control">
+          <option value="EC2">EC2</option>
+          <option value="RDS">RDS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Region</label>
+        <input id="newServerRegion" type="text" class="form-control" value="ap-south-1" />
+      </div>
+      <div id="addServerError" class="form-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="addServerModal">Cancel</button>
+      <button class="btn btn-primary" id="confirmAddServerBtn">Add Server</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Edit User Modal ───────────────────────────────────────── -->
+<div id="editUserModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit User</div>
+      <button class="modal-close" data-close="editUserModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId" />
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input id="editEmail" type="email" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select id="editRole" class="form-control">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Password <span class="text-muted">(leave blank to keep current)</span></label>
+        <input id="editPassword" type="password" class="form-control" placeholder="New password…" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="editActive" class="form-control">
+          <option value="true">Active</option>
+          <option value="false">Deactivated</option>
+        </select>
+      </div>
+      <div id="editUserError" class="form-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="editUserModal">Cancel</button>
+      <button class="btn btn-primary" id="confirmEditUserBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

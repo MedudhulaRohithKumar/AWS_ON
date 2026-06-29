@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — CSR</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚡</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div class="sidebar-logo-text">
+        <span class="sidebar-logo-name">CSR</span>
+        <span class="sidebar-logo-sub">UAT Control</span>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Main</div>
+      <a class="sidebar-item active" href="dashboard.html">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Dashboard
+      </a>
+      <a class="sidebar-item" href="docs.html" target="_blank">
+        <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Docs
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" data-user-avatar>—</div>
+        <div class="user-details">
+          <div class="user-name" data-user-name>Loading…</div>
+          <div class="user-role" data-user-role>user</div>
+        </div>
+        <button id="logoutBtn" title="Sign out" class="btn-icon btn-ghost" style="font-size:1rem;">
+          ⏏
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ─────────────────────────────────────────── -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">UAT Servers</h1>
+        <p class="page-subtitle">Select a server to extend its uptime beyond 6 PM shutdown.</p>
+      </div>
+      <button id="refreshBtn" class="btn btn-ghost btn-sm">🔄 Refresh</button>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Stats Row -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card orange">
+          <div class="stat-label">Available Servers</div>
+          <div class="stat-value" id="statTotal">—</div>
+          <div class="stat-sub">Registered in CSR</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-label">Currently Running</div>
+          <div class="stat-value" id="statRunning">—</div>
+          <div class="stat-sub">Live instances</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">My Active Extensions</div>
+          <div class="stat-value" id="statMyExt">—</div>
+          <div class="stat-sub">Protected by CSR</div>
+        </div>
+      </div>
+
+      <!-- Active Extensions Banner -->
+      <div id="activeExtBanner" class="hidden" style="margin-bottom: 20px;">
+        <div class="card" style="border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05);">
+          <div class="card-header" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+            <div class="card-title">🛡 Your Active Extensions</div>
+          </div>
+          <div id="activeExtList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- Server Grid -->
+      <h3 style="margin-bottom: 14px; font-size: 1rem; color: var(--text-secondary);">Available Servers</h3>
+      <div id="serversGrid" class="servers-grid">
+        <!-- Skeleton loading cards -->
+        <div class="server-card"><div class="skeleton" style="height:120px;"></div></div>
+        <div class="server-card"><div class="skeleton" style="height:120px;"></div></div>
+        <div class="server-card"><div class="skeleton" style="height:120px;"></div></div>
+      </div>
+
+      <!-- My Activity -->
+      <div style="margin-top: 32px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <h3 style="font-size:1rem;">My Recent Activity</h3>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>Details</th>
+                <th>Time (IST)</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="activityBody">
+              <tr><td colspan="5" style="text-align:center; padding:32px; color:var(--text-muted);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ─── Extend Modal ────────────────────────────────────────────── -->
+<div id="extendModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>⏰</span>
+        <span>Extend Server Uptime</span>
+      </div>
+      <button class="modal-close" id="closeExtendModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="extendServerInfo" style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.875rem;">
+        <strong id="extendServerName">—</strong>
+        <span class="mono" id="extendServerId" style="color:var(--text-muted); margin-left:8px;"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="extendDate">Keep running until — Date</label>
+        <input type="date" id="extendDate" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="extendTime">Time (IST)</label>
+        <input type="time" id="extendTime" class="form-control" />
+        <span class="form-hint">Your local time (IST) — converted to UTC automatically.</span>
+      </div>
+      <div id="extendPreview" class="docs-callout" style="display:none; margin:0; font-size:0.82rem;"></div>
+      <div id="extendError" class="form-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelExtendBtn">Cancel</button>
+      <button class="btn btn-primary" id="confirmExtendBtn">
+        <span id="extendBtnText">⚡ Extend Now</span>
+        <span id="extendSpinner" class="spinner hidden" style="width:14px;height:14px;border-width:2px;"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentation — CSR</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚡</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body style="background: var(--bg-root);">
+
+<!-- Top Nav -->
+<nav class="landing-nav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">⚡</div>
+    <span class="nav-logo-name">CSR</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">← Home</a>
+    <a href="login.html" class="btn btn-primary btn-sm">Sign In</a>
+  </div>
+</nav>
+
+<div class="docs-layout">
+
+  <!-- Table of Contents -->
+  <aside class="docs-toc">
+    <div class="docs-toc-title">On this page</div>
+    <a class="toc-link" href="#overview">Overview</a>
+    <a class="toc-link" href="#getting-started">Getting Started</a>
+    <a class="toc-link" href="#how-to-extend">How to Extend a Server</a>
+    <a class="toc-link" href="#how-it-stops">Auto-Stop Explained</a>
+    <a class="toc-link" href="#admin-guide">Admin Guide</a>
+    <a class="toc-link" href="#aws-architecture">AWS Architecture</a>
+    <a class="toc-link" href="#security">Security</a>
+    <a class="toc-link" href="#faq">FAQ</a>
+  </aside>
+
+  <!-- Content -->
+  <div class="docs-content">
+
+    <div style="margin-bottom: 32px;">
+      <span class="badge badge-orange" style="margin-bottom: 12px; display: inline-flex;">📄 Documentation</span>
+      <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 8px;">CSR — Cloud Server Resurrector</h1>
+      <p style="font-size: 1rem; color: var(--text-secondary);">
+        The complete guide to using the UAT Instance Control Portal.
+      </p>
+    </div>
+
+    <!-- Overview -->
+    <section class="docs-section" id="overview">
+      <h2>Overview</h2>
+      <p>
+        <strong style="color:var(--text-primary);">CSR (Cloud Server Resurrector)</strong> is a secure web portal
+        that lets your team temporarily keep UAT EC2 instances and RDS databases running beyond the
+        normal 6 PM shutdown — without disabling any infrastructure rules or affecting other environments.
+      </p>
+      <p>
+        Your existing EventBridge rules continue to fire every hour from 6 PM to 2 AM.
+        The shutdown Lambda now checks each instance for a <code class="mono">EXTEND_UNTIL</code> tag
+        before stopping it. Only the specific instances you extend via CSR are skipped.
+      </p>
+      <div class="docs-callout">
+        <strong>Project:</strong> CSR · <strong>Region:</strong> ap-south-1 ·
+        <strong>Shutdown:</strong> 6 PM IST · <strong>Work Hours:</strong> 9 AM – 6 PM IST
+      </div>
+    </section>
+
+    <!-- Getting Started -->
+    <section class="docs-section" id="getting-started">
+      <h2>Getting Started</h2>
+
+      <h3>Step 1 — Get Your Login</h3>
+      <p>
+        Ask your CSR administrator for a username and password.
+        Accounts are managed directly in the Admin Panel.
+      </p>
+
+      <h3>Step 2 — Sign In</h3>
+      <p>
+        Navigate to the CSR portal URL and click <strong>Sign In</strong>.
+        Enter your credentials and you'll be redirected to your dashboard.
+      </p>
+      <div class="docs-callout info">
+        Your session lasts <strong>8 hours</strong>. After that, you'll be prompted to log in again.
+      </div>
+
+      <h3>Step 3 — View Available Servers</h3>
+      <p>
+        The dashboard shows all UAT servers registered by your admin, along with their
+        current live status (Running / Stopped).
+      </p>
+    </section>
+
+    <!-- How to Extend -->
+    <section class="docs-section" id="how-to-extend">
+      <h2>How to Extend a Server</h2>
+
+      <ol>
+        <li>Find the server card on the dashboard and click <strong>"Extend / Start"</strong>.</li>
+        <li>In the modal, select the <strong>date</strong> and <strong>time</strong> (IST) until which the server should remain running.</li>
+        <li>Review the preview and click <strong>"⚡ Extend Now"</strong>.</li>
+        <li>CSR will:
+          <ul>
+            <li>Start the instance immediately (if stopped)</li>
+            <li>Apply a <code class="mono">EXTEND_UNTIL</code> tag to the instance</li>
+            <li>Schedule an auto-stop at your chosen deadline</li>
+          </ul>
+        </li>
+        <li>The server card will show a green "Extended until…" banner with a countdown.</li>
+      </ol>
+
+      <div class="docs-callout">
+        <strong>Multi-day extensions work.</strong> If you extend until June 23rd at 11 PM,
+        the instance will be protected through all nightly shutdown events (6 PM, 7 PM… 2 AM)
+        until that deadline.
+      </div>
+
+      <h3>Updating an Extension</h3>
+      <p>
+        Click <strong>"Extend / Start"</strong> again on an already-extended server and pick
+        a new time. CSR will update the deadline and reschedule the auto-stop.
+      </p>
+
+      <h3>Stopping Early</h3>
+      <p>
+        Click <strong>"Stop Now"</strong> on any running server to stop it immediately,
+        remove the protection tag, and cancel the scheduled auto-stop.
+      </p>
+    </section>
+
+    <!-- Auto-Stop -->
+    <section class="docs-section" id="how-it-stops">
+      <h2>Auto-Stop Explained</h2>
+
+      <p>
+        When you extend a server, CSR creates a <strong>one-time EventBridge Scheduler</strong>
+        that fires at exactly your chosen deadline and invokes the CSR Lambda to stop the instance.
+      </p>
+
+      <div class="docs-code">Example timeline for "Extended until June 23, 11:00 PM IST":
+
+June 23, 6:00 PM  → EventBridge fires → Shutdown Lambda runs
+                    → Sees EXTEND_UNTIL = 2026-06-23T17:30:00Z (> now UTC) → SKIPS
+June 23, 7:00 PM  → Same → SKIPS
+...
+June 23, 11:00 PM → CSR Scheduler fires → Stops instance → Removes tag → Done ✅
+June 24, 6:00 PM  → EventBridge fires → No tag found → Instance stops normally</div>
+
+      <div class="docs-callout warning">
+        <strong>Important:</strong> Only the instances you select are protected.
+        All other UAT instances shut down at 6 PM as normal.
+      </div>
+    </section>
+
+    <!-- Admin Guide -->
+    <section class="docs-section" id="admin-guide">
+      <h2>Admin Guide</h2>
+
+      <h3>Managing Users</h3>
+      <p>Go to <strong>Admin Panel → Users</strong> to:</p>
+      <ul>
+        <li>Add new users with username, email, password, and role (user/admin)</li>
+        <li>Change roles or reset passwords</li>
+        <li>Deactivate accounts (they cannot log in but data is preserved)</li>
+      </ul>
+
+      <h3>Managing Servers</h3>
+      <p>Go to <strong>Admin Panel → Servers</strong> to:</p>
+      <ul>
+        <li><strong>Add Manually:</strong> Enter the EC2 Instance ID or RDS DB Identifier, display name, and type</li>
+        <li><strong>Discover from AWS:</strong> Auto-scan for EC2 instances tagged <code class="mono">TURN_UP = UAT_EXTEND</code></li>
+        <li>Remove servers from the portal (they are not deleted from AWS)</li>
+      </ul>
+
+      <h3>Activity Log</h3>
+      <p>
+        Every action — login, logout, extend, stop, add user — is recorded with username,
+        timestamp (IST), IP address, and details. Use the search bar to filter.
+      </p>
+
+      <h3>Extra Hours Report</h3>
+      <p>
+        Shows how many hours each instance ran outside normal working hours (after 6 PM).
+        Useful for understanding cloud cost impact of UAT extensions.
+      </p>
+
+      <h3>Leaderboard</h3>
+      <p>
+        Ranks users by total extra hours of UAT uptime they've requested.
+        Top 3 shown on a visual podium.
+      </p>
+    </section>
+
+    <!-- AWS Architecture -->
+    <section class="docs-section" id="aws-architecture">
+      <h2>AWS Architecture</h2>
+
+      <h3>Components</h3>
+      <ul>
+        <li><strong>CSR Lambda</strong> (Python 3.13, FastAPI + Mangum) — the backend API</li>
+        <li><strong>API Gateway</strong> (HTTP API) — routes HTTP requests to the Lambda</li>
+        <li><strong>S3 Bucket</strong> <code class="mono">instance-rds-extend</code> — stores JSON data files</li>
+        <li><strong>EventBridge Scheduler</strong> — one-time schedules per extension for auto-stop</li>
+        <li><strong>S3 Static Website</strong> — serves the frontend HTML/CSS/JS</li>
+      </ul>
+
+      <h3>Data Files in S3</h3>
+      <ul>
+        <li><code class="mono">users.json</code> — user accounts</li>
+        <li><code class="mono">activity.json</code> — full audit log</li>
+        <li><code class="mono">servers.json</code> — registered servers</li>
+        <li><code class="mono">extensions.json</code> — extension records</li>
+      </ul>
+
+      <h3>Lambda Environment Variables</h3>
+      <div class="docs-code">S3_BUCKET_NAME=instance-rds-extend
+AWS_REGION=ap-south-1
+JWT_SECRET=your-secret-here
+CSR_LAMBDA_ARN=arn:aws:lambda:ap-south-1:ACCOUNT:function:csr-backend
+SCHEDULER_ROLE_ARN=arn:aws:iam::ACCOUNT:role/csr-scheduler-invoke-role
+ALLOWED_ORIGINS=https://your-s3-static-site.s3-website.ap-south-1.amazonaws.com</div>
+    </section>
+
+    <!-- Security -->
+    <section class="docs-section" id="security">
+      <h2>Security</h2>
+      <ul>
+        <li>Passwords hashed with <strong>bcrypt</strong> (12 rounds) — never stored in plaintext</li>
+        <li>Authentication via <strong>JWT tokens</strong> (8-hour expiry)</li>
+        <li>All AWS operations via <strong>IAM Role</strong> on the Lambda — no credentials in code</li>
+        <li>Admin routes protected by role check — users receive 403 if they try to access admin APIs</li>
+        <li>All actions logged with IP address and timestamp for audit</li>
+        <li>S3 bucket is private — frontend is served from a separate static site</li>
+      </ul>
+      <div class="docs-callout warning">
+        <strong>Change JWT_SECRET</strong> immediately after first deployment.
+        Use a random 64-character string. Store it in AWS Secrets Manager or as a Lambda env var.
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="docs-section" id="faq">
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>What if I extend past 2 AM?</h3>
+      <p>
+        Works perfectly. The EventBridge rules fire until 2 AM. After 2 AM, no more shutdown
+        attempts are made by EventBridge. Your instance stays running until CSR's scheduled
+        stop fires at your chosen deadline.
+      </p>
+
+      <h3>Can I extend an instance that's already running?</h3>
+      <p>
+        Yes. If it's already running (from before 6 PM), CSR just applies the protection tag
+        so the 6 PM shutdown skips it. The instance isn't restarted.
+      </p>
+
+      <h3>What if two people extend the same instance?</h3>
+      <p>
+        The second extension overwrites the first. The deadline is updated to whichever was
+        set last. Both actions are logged in the activity trail.
+      </p>
+
+      <h3>Does CSR affect production instances?</h3>
+      <p>
+        No. CSR only operates on instances explicitly registered by an admin in the Server Registry.
+        The shutdown Lambda patch also only checks for the <code class="mono">EXTEND_UNTIL</code>
+        tag — production instances will never have this tag.
+      </p>
+
+      <h3>Where do I find the portal URL?</h3>
+      <p>
+        Ask your CSR administrator. The URL is your S3 static website URL or a custom domain
+        if one was configured.
+      </p>
+    </section>
+
+    <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+      <p class="text-sm text-muted">CSR v1.0 · ap-south-1 · Built for the CSR Project</p>
+      <div style="margin-top: 12px; display: flex; gap: 12px; justify-content: center;">
+        <a href="login.html" class="btn btn-primary btn-sm">Sign In →</a>
+        <a href="index.html" class="btn btn-ghost btn-sm">← Home</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Highlight active TOC link on scroll
+const sections = document.querySelectorAll('.docs-section');
+const links = document.querySelectorAll('.toc-link');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
