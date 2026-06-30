@@ -39,7 +39,14 @@ def _parse_utc(dt_str: str) -> datetime:
 @router.get("")
 async def list_servers(current_user: dict = Depends(get_current_user)):
     """List all active servers with their live AWS status."""
-    servers = [s for s in get_all_servers() if s.get("is_active", True)]
+    all_active = [s for s in get_all_servers() if s.get("is_active", True)]
+    
+    if current_user.get("role") != "admin":
+        assigned = set(current_user.get("assigned_servers", []))
+        servers = [s for s in all_active if s["instance_id"] in assigned]
+    else:
+        servers = all_active
+
     result = []
     for s in servers:
         live_status = (

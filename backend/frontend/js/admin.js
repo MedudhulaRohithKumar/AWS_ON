@@ -91,11 +91,37 @@ async function loadUsers() {
   }
 }
 
+let availableServersCache = null;
+
+async function loadServersForModal(containerId, selectedServers = []) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">Loading...</span>';
+  try {
+    if (!availableServersCache) {
+      availableServersCache = await api.get('/api/servers');
+    }
+    if (!availableServersCache.length) {
+      container.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">No servers available.</span>';
+      return;
+    }
+    
+    container.innerHTML = availableServersCache.map(s => `
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.875rem; cursor:pointer;">
+        <input type="checkbox" name="assign_server" value="${s.instance_id}" ${selectedServers.includes(s.instance_id) ? 'checked' : ''} />
+        ${s.display_name} <span class="mono" style="color:var(--text-muted); font-size:0.75rem;">(${s.instance_id})</span>
+      </label>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<span style="color:var(--danger);font-size:0.8rem;">${err.message}</span>`;
+  }
+}
+
 // Add User
 document.getElementById('openAddUserBtn').addEventListener('click', () => {
   ['newUsername','newEmail','newPassword'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('newRole').value = 'user';
   document.getElementById('addUserError').style.display = 'none';
+  loadServersForModal('newServersList', []);
   document.getElementById('addUserModal').classList.add('active');
 });
 
@@ -104,11 +130,14 @@ document.getElementById('confirmAddUserBtn').addEventListener('click', async () 
   const errEl = document.getElementById('addUserError');
   errEl.style.display = 'none';
 
+  const assigned = Array.from(document.querySelectorAll('#newServersList input[name="assign_server"]:checked')).map(cb => cb.value);
+
   const body = {
     username: document.getElementById('newUsername').value.trim(),
     email:    document.getElementById('newEmail').value.trim(),
     password: document.getElementById('newPassword').value,
     role:     document.getElementById('newRole').value,
+    assigned_servers: assigned,
   };
 
   if (!body.username || !body.email || !body.password) {
@@ -139,6 +168,7 @@ window.openEditUser = function(user) {
   document.getElementById('editActive').value   = String(user.is_active);
   document.getElementById('editPassword').value = '';
   document.getElementById('editUserError').style.display = 'none';
+  loadServersForModal('editServersList', user.assigned_servers || []);
   document.getElementById('editUserModal').classList.add('active');
 };
 
@@ -148,10 +178,13 @@ document.getElementById('confirmEditUserBtn').addEventListener('click', async ()
   errEl.style.display = 'none';
 
   const userId = document.getElementById('editUserId').value;
+  const assigned = Array.from(document.querySelectorAll('#editServersList input[name="assign_server"]:checked')).map(cb => cb.value);
+
   const body = {
     email:     document.getElementById('editEmail').value.trim() || undefined,
     role:      document.getElementById('editRole').value,
     is_active: document.getElementById('editActive').value === 'true',
+    assigned_servers: assigned,
   };
   const pwd = document.getElementById('editPassword').value;
   if (pwd) body.password = pwd;
@@ -183,28 +216,49 @@ window.deactivateUser = async function(userId, username) {
 // ─── SERVERS TAB ────────────────────────────────────────────────
 
 async function loadServers() {
-  const tbody = document.getElementById('serversBody');
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Loading…</td></tr>';
+  const ec2Tbody = document.getElementById('ec2ServersBody');
+  const rdsTbody = document.getElementById('rdsServersBody');
+  ec2Tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Loading…</td></tr>';
+  rdsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Loading…</td></tr>';
   try {
     const servers = await api.get('/api/servers');
-    if (!servers.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">No servers registered yet. Add one above.</td></tr>';
-      return;
+    const ec2Servers = servers.filter(s => s.type === 'EC2');
+    const rdsServers = servers.filter(s => s.type === 'RDS');
+
+    if (!ec2Servers.length) {
+      ec2Tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">No EC2 servers registered.</td></tr>';
+    } else {
+      ec2Tbody.innerHTML = ec2Servers.map(s => `
+        <tr>
+          <td><strong style="font-size:0.875rem;">${s.display_name}</strong></td>
+          <td class="mono" style="font-size:0.8rem;color:var(--text-muted);">${s.instance_id}</td>
+          <td style="font-size:0.82rem;">${s.region}</td>
+          <td style="font-size:0.82rem;color:var(--text-secondary);">${s.added_by || '—'}</td>
+          <td>${statusBadge(s.status)}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="removeServer('${s.id}','${s.display_name}')">🗑 Remove</button>
+          </td>
+        </tr>`).join('');
     }
-    tbody.innerHTML = servers.map(s => `
-      <tr>
-        <td><strong style="font-size:0.875rem;">${s.display_name}</strong></td>
-        <td class="mono" style="font-size:0.8rem;color:var(--text-muted);">${s.instance_id}</td>
-        <td>${typeBadge(s.type)}</td>
-        <td style="font-size:0.82rem;">${s.region}</td>
-        <td style="font-size:0.82rem;color:var(--text-secondary);">${s.added_by || '—'}</td>
-        <td>${statusBadge(s.status)}</td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="removeServer('${s.id}','${s.display_name}')">🗑 Remove</button>
-        </td>
-      </tr>`).join('');
+
+    if (!rdsServers.length) {
+      rdsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">No RDS databases registered.</td></tr>';
+    } else {
+      rdsTbody.innerHTML = rdsServers.map(s => `
+        <tr>
+          <td><strong style="font-size:0.875rem;">${s.display_name}</strong></td>
+          <td class="mono" style="font-size:0.8rem;color:var(--text-muted);">${s.instance_id}</td>
+          <td style="font-size:0.82rem;">${s.region}</td>
+          <td style="font-size:0.82rem;color:var(--text-secondary);">${s.added_by || '—'}</td>
+          <td>${statusBadge(s.status)}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="removeServer('${s.id}','${s.display_name}')">🗑 Remove</button>
+          </td>
+        </tr>`).join('');
+    }
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--danger);">${err.message}</td></tr>`;
+    ec2Tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--danger);">${err.message}</td></tr>`;
+    rdsTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--danger);">${err.message}</td></tr>`;
   }
 }
 

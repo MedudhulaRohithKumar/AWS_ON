@@ -99,10 +99,20 @@
       </div>
       <div class="page-content">
         <div id="discoverResults" class="hidden" style="margin-bottom:20px;"></div>
+        
+        <h3 style="margin-bottom: 14px; font-size: 1rem; color: var(--text-secondary);">EC2 Servers</h3>
+        <div class="table-wrapper" style="margin-bottom: 24px;">
+          <table>
+            <thead><tr><th>Name</th><th>Instance ID</th><th>Region</th><th>Added By</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="ec2ServersBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-bottom: 14px; font-size: 1rem; color: var(--text-secondary);">RDS Databases</h3>
         <div class="table-wrapper">
           <table>
-            <thead><tr><th>Name</th><th>Instance ID</th><th>Type</th><th>Region</th><th>Added By</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="serversBody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
+            <thead><tr><th>Name</th><th>DB Identifier</th><th>Region</th><th>Added By</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="rdsServersBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -201,6 +211,12 @@
           <option value="admin">Admin</option>
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label">Assign Servers</label>
+        <div id="newServersList" style="max-height: 150px; overflow-y: auto; background: var(--bg-primary); padding: 8px; border-radius: var(--radius-sm);">
+          <span style="color:var(--text-muted);font-size:0.8rem;">Loading...</span>
+        </div>
+      </div>
       <div id="addUserError" class="form-error" style="display:none;"></div>
     </div>
     <div class="modal-footer">
@@ -277,6 +293,12 @@
           <option value="true">Active</option>
           <option value="false">Deactivated</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Assign Servers</label>
+        <div id="editServersList" style="max-height: 150px; overflow-y: auto; background: var(--bg-primary); padding: 8px; border-radius: var(--radius-sm);">
+          <span style="color:var(--text-muted);font-size:0.8rem;">Loading...</span>
+        </div>
       </div>
       <div id="editUserError" class="form-error" style="display:none;"></div>
     </div>

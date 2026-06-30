@@ -28,7 +28,10 @@ def _now_str() -> str:
 
 
 def _safe_user(u: dict) -> dict:
-    return {k: v for k, v in u.items() if k != "password_hash"}
+    safe = {k: v for k, v in u.items() if k != "password_hash"}
+    if "assigned_servers" not in safe:
+        safe["assigned_servers"] = []
+    return safe
 
 
 # ─── User Management ───────────────────────────────────────────────────────
@@ -52,6 +55,7 @@ async def add_user(body: CreateUserRequest, request: Request,
         "role": body.role,
         "created_at": _now_str(),
         "is_active": True,
+        "assigned_servers": body.assigned_servers,
     }
     create_user(new_user)
     log_activity({
@@ -85,6 +89,8 @@ async def update_user_endpoint(user_id: str, body: UpdateUserRequest,
         updates["is_active"] = body.is_active
     if body.password is not None:
         updates["password_hash"] = hash_password(body.password)
+    if body.assigned_servers is not None:
+        updates["assigned_servers"] = body.assigned_servers
 
     updated = update_user(user_id, updates)
     log_activity({

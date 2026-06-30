@@ -35,6 +35,7 @@ class CreateUserRequest(BaseModel):
     email: str
     password: str
     role: UserRole = UserRole.user
+    assigned_servers: list[str] = []
 
 
 class UpdateUserRequest(BaseModel):
@@ -42,6 +43,7 @@ class UpdateUserRequest(BaseModel):
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
     password: Optional[str] = None
+    assigned_servers: Optional[list[str]] = None
 
 
 class AddServerRequest(BaseModel):
@@ -60,6 +62,7 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: str
+    assigned_servers: list[str] = []
 
 
 class ServerResponse(BaseModel):
