@@ -906,13 +906,14 @@ tbody tr:hover {
   padding: 20px;
   z-index: 1000;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
-.modal-overlay.active,
-.modal-overlay:not(.hidden):not([style*="display: none"]) {
+.modal-overlay.active {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 
