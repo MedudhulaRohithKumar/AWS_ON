@@ -3,7 +3,7 @@
  * Handles all 5 tabs: Users, Servers, Activity, Reports, Leaderboard
  */
 import {
-  requireAdmin, logout, api, showToast,
+  requireAdmin, logout, api, showToast, showConfirm,
   formatDate, statusBadge, typeBadge, initUserDisplay,
 } from './api.js';
 
@@ -203,7 +203,14 @@ document.getElementById('confirmEditUserBtn').addEventListener('click', async ()
 });
 
 window.deactivateUser = async function(userId, username) {
-  if (!confirm(`Deactivate user '${username}'? They will no longer be able to log in.`)) return;
+  const confirmed = await showConfirm({
+    title: 'Deactivate User',
+    message: `Are you sure you want to deactivate user '${username}'? They will no longer be able to log in.`,
+    confirmText: 'Deactivate',
+    type: 'danger',
+    icon: '⚠️'
+  });
+  if (!confirmed) return;
   try {
     await api.delete(`/api/admin/users/${userId}`);
     showToast(`User '${username}' deactivated`, 'success');
@@ -353,7 +360,14 @@ document.getElementById('confirmAddServerBtn').addEventListener('click', async (
 });
 
 window.removeServer = async function(serverId, name) {
-  if (!confirm(`Remove '${name}' from CSR? The instance will not be deleted from AWS.`)) return;
+  const confirmed = await showConfirm({
+    title: 'Remove Server',
+    message: `Remove '${name}' from CSR? The instance will not be deleted from AWS.`,
+    confirmText: 'Remove',
+    type: 'danger',
+    icon: '🗑'
+  });
+  if (!confirmed) return;
   try {
     await api.delete(`/api/admin/servers/${serverId}`);
     showToast(`${name} removed from CSR`, 'success');
@@ -535,8 +549,16 @@ async function loadLeaderboard() {
 
 // ─── Logout ────────────────────────────────────────────────────
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  if (confirm('Sign out of CSR Admin?')) logout();
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  const confirmed = await showConfirm({
+    title: 'Sign Out',
+    message: 'Are you sure you want to sign out of CSR Admin?',
+    confirmText: 'Sign Out',
+    cancelText: 'Stay Logged In',
+    type: 'danger',
+    icon: '🚪'
+  });
+  if (confirmed) logout();
 });
 
 // ─── Init ──────────────────────────────────────────────────────

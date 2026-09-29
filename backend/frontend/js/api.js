@@ -174,3 +174,53 @@ export function initUserDisplay() {
     el.textContent = user.username.slice(0, 2).toUpperCase();
   });
 }
+
+// ─── In-App Modal Dialog (replaces browser confirm/alert) ───────
+
+export function showConfirm({
+  title = "Confirm Action",
+  message = "Are you sure you want to proceed?",
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  type = "danger",
+  icon = "⚠️"
+} = {}) {
+  return new Promise((resolve) => {
+    const existing = document.getElementById("csrConfirmOverlay");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "csrConfirmOverlay";
+    overlay.className = "modal-overlay active";
+    overlay.style.zIndex = "2500";
+
+    const btnClass = type === "danger" ? "btn-danger" : type === "warning" ? "btn-warning" : "btn-primary";
+
+    overlay.innerHTML = `
+      <div class="modal confirm-modal" style="max-width: 440px; text-align: center;">
+        <div style="font-size: 2.6rem; margin-bottom: 12px; line-height: 1;">${icon}</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">${title}</h3>
+        <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">${message}</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="csrConfirmCancelBtn" class="btn btn-ghost" style="flex: 1; justify-content: center; padding: 11px 18px;">${cancelText}</button>
+          <button id="csrConfirmOkBtn" class="btn ${btnClass}" style="flex: 1; justify-content: center; padding: 11px 18px;">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const cleanup = (result) => {
+      overlay.classList.remove("active");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    };
+
+    overlay.querySelector("#csrConfirmOkBtn").addEventListener("click", () => cleanup(true));
+    overlay.querySelector("#csrConfirmCancelBtn").addEventListener("click", () => cleanup(false));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) cleanup(false);
+    });
+  });
+}
+

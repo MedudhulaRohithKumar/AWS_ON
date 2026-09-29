@@ -3,7 +3,7 @@
  * Loads servers, extensions, and personal activity. Handles extend/stop modals.
  */
 import {
-  requireAuth, logout, api, showToast,
+  requireAuth, logout, api, showToast, showConfirm,
   formatDate, timeUntil, statusBadge, typeBadge,
   isAdmin, initUserDisplay, getUser,
 } from './api.js';
@@ -92,34 +92,41 @@ async function loadServers() {
             <div class="server-icon ${isEC2 ? 'ec2' : 'rds'}">
               ${isEC2 ? '🖥' : '🗄'}
             </div>
-            <div style="flex:1;min-width:0;margin-left:12px;">
-              <div class="server-name truncate">${server.display_name}</div>
-              <div class="server-id">${server.instance_id}</div>
+            <div style="flex:1;min-width:0;margin-left:14px;">
+              <div class="server-name truncate" title="${server.display_name}">${server.display_name}</div>
+              <div class="server-id-badge mono">${server.instance_id}</div>
             </div>
             ${statusBadge(server.status)}
           </div>
 
-          <div class="server-meta">
+          <div class="server-meta-tags">
             ${typeBadge(server.type)}
             <span class="badge badge-muted">📍 ${server.region}</span>
           </div>
 
           ${isExtended ? `
-            <div class="server-extension-info">
-              🛡 Protected until <strong>${formatDate(ext.extended_until)}</strong>
-              <br/><span style="font-size:0.75rem;opacity:0.8;">${timeUntil(ext.extended_until)}</span>
+            <div class="server-extension-banner">
+              <div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--success);">
+                <span>🛡</span>
+                <span>Protected until ${formatDate(ext.extended_until)}</span>
+              </div>
+              <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:3px;">
+                ⏳ ${timeUntil(ext.extended_until)}
+              </div>
             </div>
           ` : ''}
 
-          <div class="server-actions">
+          <div class="server-card-actions">
             <button
-              class="btn btn-success btn-sm"
+              class="btn ${isRunning ? 'btn-primary' : 'btn-success'} btn-sm"
+              style="flex: 1; justify-content: center; padding: 10px 14px;"
               onclick="openExtend('${server.id}', '${server.display_name}', '${server.instance_id}')">
               ${isRunning ? '⏰ Extend' : '⚡ Start & Extend'}
             </button>
             ${isRunning ? `
               <button
                 class="btn btn-danger btn-sm"
+                style="justify-content: center; padding: 10px 14px;"
                 onclick="stopServer('${server.id}', '${server.display_name}')">
                 ⏹ Stop
               </button>` : ''}
@@ -290,7 +297,14 @@ document.getElementById('confirmExtendBtn').addEventListener('click', async () =
 // ─── Stop Server ───────────────────────────────────────────────
 
 window.stopServer = async function(serverId, name) {
-  if (!confirm(`Stop "${name}" now? This will remove CSR protection and stop the instance.`)) return;
+  const confirmed = await showConfirm({
+    title: 'Stop Instance',
+    message: `Are you sure you want to stop "${name}" now? This will immediately remove CSR protection and stop the instance.`,
+    confirmText: 'Stop Instance',
+    type: 'danger',
+    icon: '⏹'
+  });
+  if (!confirmed) return;
   try {
     await api.post(`/api/servers/${serverId}/stop`);
     showToast(`${name} stopped successfully`, 'success');
@@ -310,8 +324,16 @@ refreshBtn.addEventListener('click', async () => {
   refreshBtn.textContent = '🔄 Refresh';
 });
 
-logoutBtn.addEventListener('click', () => {
-  if (confirm('Sign out of CSR?')) logout();
+logoutBtn.addEventListener('click', async () => {
+  const confirmed = await showConfirm({
+    title: 'Sign Out',
+    message: 'Are you sure you want to sign out of CSR?',
+    confirmText: 'Sign Out',
+    cancelText: 'Stay Logged In',
+    type: 'danger',
+    icon: '🚪'
+  });
+  if (confirmed) logout();
 });
 
 // Admin redirect

@@ -802,11 +802,38 @@ p  { color: var(--text-secondary); font-size: 0.95rem; }
   letter-spacing: -0.015em;
 }
 
-.server-id {
+.server-id,
+.server-id-badge {
   font-family: var(--font-mono);
   font-size: 0.775rem;
-  color: var(--text-muted);
-  margin-top: 2px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  display: inline-block;
+  margin-top: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  letter-spacing: -0.01em;
+}
+
+.server-meta,
+.server-meta-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 16px;
+  flex-wrap: wrap;
+}
+
+.server-extension-banner,
+.server-extension-info {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.15);
 }
 
 .server-card-body {
@@ -836,11 +863,13 @@ p  { color: var(--text-secondary); font-size: 0.95rem; }
   font-weight: 600;
 }
 
-.server-card-actions {
+.server-card-actions,
+.server-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid var(--border);
 }
 
@@ -1065,20 +1094,16 @@ tbody tr:hover {
 
 /* ─── Claymorphic Landing Page Showcase ──────────────────────── */
 .landing-nav {
-  position: sticky;
-  top: 18px;
-  max-width: 1140px;
+  position: relative;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 12px 24px;
+  padding: 24px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(22, 27, 42, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--clay-card);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   z-index: 100;
 }
 
