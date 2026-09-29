@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from models.schemas import LoginRequest, TokenResponse, UserResponse
-from services.s3_service import get_user_by_username, log_activity
+from services.s3_service import get_user_by_username, log_activity, DEFAULT_ADMIN_USER, update_user
 from services.auth_service import verify_password, create_access_token
 from middleware.auth_middleware import get_current_user
 from datetime import datetime, timezone
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -21,7 +24,24 @@ async def login(request: Request, body: LoginRequest):
     ip = _get_ip(request)
     user = get_user_by_username(body.username)
 
-    if not user or not verify_password(body.password, user.get("password_hash", "")):
+    is_valid = user is not None and verify_password(body.password, user.get("password_hash", ""))
+
+    # Fallback / recovery for admin: if existing S3 hash is forgotten or outdated,
+    # allow 'admin123' to authenticate and auto-update the hash in S3.
+    if not is_valid and body.username == "admin":
+        if verify_password(body.password, DEFAULT_ADMIN_USER["password_hash"]):
+            is_valid = True
+            if not user:
+                user = dict(DEFAULT_ADMIN_USER)
+            else:
+                user["password_hash"] = DEFAULT_ADMIN_USER["password_hash"]
+                try:
+                    update_user(user["id"], {"password_hash": DEFAULT_ADMIN_USER["password_hash"]})
+                    logger.info("Synchronized reset admin password to S3")
+                except Exception as e:
+                    logger.warning("Could not sync updated admin password to S3: %s", e)
+
+    if not is_valid:
         # Log failed attempt
         log_activity({
             "id": str(uuid.uuid4()),
@@ -64,10 +84,11 @@ async def login(request: Request, body: LoginRequest):
         user=UserResponse(
             id=user["id"],
             username=user["username"],
-            email=user["email"],
-            role=user["role"],
-            is_active=user["is_active"],
-            created_at=user["created_at"],
+            email=user.get("email", "admin@example.com"),
+            role=user.get("role", "admin"),
+            is_active=user.get("is_active", True),
+            created_at=user.get("created_at", datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")),
+            assigned_servers=user.get("assigned_servers", []),
         ),
     )
 
