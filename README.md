@@ -16,35 +16,42 @@ First, create the IAM role that your Lambda will use to execute.
 - Attach the policy defined in `iam_policy/csr_lambda_execution_policy.json`.
 - Copy the **Role ARN** (e.g., `arn:aws:iam::123456789012:role/csr-lambda-role`).
 
-### 2. Build Docker Image & Deploy Lambda
+### 2. Deploy via GitHub Actions (CI/CD)
 
-You can completely automate building the image and creating/updating the Lambda function using the provided script.
+The application is built and deployed automatically to AWS Lambda via GitHub Actions (`.github/workflows/deploy.yml`) on every push to the `main` branch or manual trigger (`workflow_dispatch`).
+
+Configure the following in your GitHub Repository Settings → **Secrets and variables** → **Actions**:
+
+- **Repository Secrets**:
+  - `AWS_ACCESS_KEY_ID`: IAM user access key with ECR and Lambda permissions.
+  - `AWS_SECRET_ACCESS_KEY`: IAM user secret key.
+  - `LAMBDA_ROLE_ARN`: The ARN of your Lambda IAM role (from Step 1).
+- **Repository Variables** (optional, defaults provided):
+  - `AWS_REGION`: AWS region (default: `ap-south-1`).
+  - `ECR_REPOSITORY`: Name of the ECR repository (default: `service-up`).
+  - `LAMBDA_FUNCTION_NAME`: Name of your Lambda function (default: `serviceup`).
+
+### 3. Create S3 Bucket & Configure Lambda Environment Variables
+
+Create your S3 bucket (e.g. `my-csr-data-bucket`) to store user accounts, activity logs, servers, and extensions.
+
+Configure the environment variables in your Lambda Function (**Configuration → Environment variables**):
+See `.env.example` for all variables.
+- `S3_BUCKET_NAME`: Name of your S3 bucket (e.g., `my-csr-data-bucket`).
+- `AWS_REGION`: AWS region (e.g., `ap-south-1`).
+- `JWT_SECRET`: Random 32+ character secret string.
+- `CSR_LAMBDA_ARN`: ARN of the Lambda function (e.g., `arn:aws:lambda:...`).
+- `SCHEDULER_ROLE_ARN`: ARN of the EventBridge Scheduler execution role.
+- `ALLOWED_ORIGINS`: `*` or your custom domain / Function URL.
+
+### 4. Seed Initial Admin User
+
+Run the helper script locally to create your admin credentials in the S3 bucket:
 
 ```bash
-export LAMBDA_ROLE_ARN=arn:aws:iam::123456789012:role/csr-lambda-role
-bash deploy/deploy_backend.sh
+python3 seed_admin.py
 ```
-
-This script automatically:
-1. Looks up your AWS account ID.
-2. Creates an ECR repository `csr-backend` (if it does not exist).
-3. Authenticates Docker with ECR.
-4. Builds the Docker image for `linux/amd64` (Lambda-compatible).
-5. Pushes the image to ECR.
-6. Checks if the `csr-backend` Lambda function exists.
-   - If **yes**, it updates the function to use the new image.
-   - If **no**, it creates the function automatically using your `$LAMBDA_ROLE_ARN`.
-
-
-See `.env.example` — copy all vars into your Lambda's Configuration → Environment Variables.
-
-### 3. Deploy via GitHub Actions (CI/CD)
-
-A GitHub Actions workflow is included (`.github/workflows/deploy.yml`) to automatically deploy the application on every push to the `main` branch.
-
-Add the following repository secrets / variables:
-- **Secrets**: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
-- **Variables**: `AWS_REGION`, `ECR_REPOSITORY`, `LAMBDA_FUNCTION_NAME`
+This prompts for your bucket name, admin username, email, and password, then securely hashes the password with bcrypt and uploads `users.json` to your S3 bucket (or saves it locally for manual S3 upload).
 
 ### 4. Patch Shutdown Lambdas
 
@@ -98,9 +105,7 @@ AWS_ON/
 ├── iam_policy/                # IAM policies
 │   ├── csr_lambda_execution_policy.json
 │   └── csr_scheduler_invoke_policy.json
-├── deploy/
-│   ├── seed_admin.py          # Bootstrap first admin user
-│   └── deploy_backend.sh      # Bash script for manual Docker Lambda deployment
+├── seed_admin.py              # Bootstrap first admin user (local or direct S3)
 └── .env.example
 ```
 

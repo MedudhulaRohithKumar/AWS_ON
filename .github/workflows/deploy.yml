@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Build & Deploy
+    name: Build & Deploy to Lambda
     runs-on: ubuntu-latest
 
     steps:
@@ -19,51 +20,87 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: "ap-south-1"
+          aws-region: ${{ vars.AWS_REGION || 'ap-south-1' }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR Repository Exists
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'service-up' }}
+        run: |
+          echo "Checking ECR repository: $ECR_REPOSITORY"
+          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" > /dev/null 2>&1 || \
+          aws ecr create-repository \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-scanning-configuration scanOnPush=true \
+            --region ${{ vars.AWS_REGION || 'ap-south-1' }}
+
       - name: Build, tag, and push Docker image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: "service-up"
-          IMAGE_TAG: latest
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'service-up' }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build the Docker image
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG backend/
+          echo "Building container image for linux/amd64..."
+          docker build --platform linux/amd64 \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            backend/
           
-          # Push to ECR
+          echo "Pushing images to Amazon ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Update or Create AWS Lambda Function
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: "service-up"
-          IMAGE_TAG: latest
-          LAMBDA_FUNCTION_NAME: "serviceup"
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'service-up' }}
+          IMAGE_TAG: ${{ github.sha }}
+          LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME || 'serviceup' }}
           LAMBDA_ROLE_ARN: ${{ secrets.LAMBDA_ROLE_ARN }}
         run: |
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          echo "Deploying Lambda function: $LAMBDA_FUNCTION_NAME with image: $IMAGE_URI"
+          echo "Deploying Lambda function '$LAMBDA_FUNCTION_NAME' with image: $IMAGE_URI"
           
-          if aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME > /dev/null 2>&1; then
-            echo "Function exists. Updating..."
+          if aws lambda get-function --function-name "$LAMBDA_FUNCTION_NAME" > /dev/null 2>&1; then
+            echo "Function '$LAMBDA_FUNCTION_NAME' exists. Updating function code..."
             aws lambda update-function-code \
-              --function-name $LAMBDA_FUNCTION_NAME \
-              --image-uri $IMAGE_URI
+              --function-name "$LAMBDA_FUNCTION_NAME" \
+              --image-uri "$IMAGE_URI"
+            
+            echo "Waiting for Lambda function update to complete..."
+            aws lambda wait function-updated --function-name "$LAMBDA_FUNCTION_NAME"
+            echo "Lambda function code updated successfully!"
           else
-            echo "Function does not exist. Creating..."
+            echo "Function '$LAMBDA_FUNCTION_NAME' does not exist. Creating..."
             if [ -z "$LAMBDA_ROLE_ARN" ]; then
               echo "Error: LAMBDA_ROLE_ARN secret is required to create the function."
               exit 1
             fi
             aws lambda create-function \
-              --function-name $LAMBDA_FUNCTION_NAME \
+              --function-name "$LAMBDA_FUNCTION_NAME" \
               --package-type Image \
-              --code ImageUri=$IMAGE_URI \
-              --role $LAMBDA_ROLE_ARN \
+              --code ImageUri="$IMAGE_URI" \
+              --role "$LAMBDA_ROLE_ARN" \
               --timeout 30 \
-              --memory-size 256
+              --memory-size 512
+              
+            echo "Waiting for Lambda function to become active..."
+            aws lambda wait function-active --function-name "$LAMBDA_FUNCTION_NAME"
+            echo "Lambda function created successfully!"
+          fi
+
+      - name: Show Lambda Function URL
+        env:
+          LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME || 'serviceup' }}
+        run: |
+          URL=$(aws lambda get-function-url-config --function-name "$LAMBDA_FUNCTION_NAME" --query "FunctionUrl" --output text 2>/dev/null || echo "")
+          if [ -n "$URL" ]; then
+            echo "=========================================================="
+            echo "🚀 Lambda Function URL: $URL"
+            echo "=========================================================="
+          else
+            echo "Note: No Lambda Function URL configured yet. If using Function URLs, configure it in AWS Console → Lambda → Configuration → Function URL."
           fi
