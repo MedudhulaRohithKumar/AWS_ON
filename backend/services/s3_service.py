@@ -58,16 +58,59 @@ def write_json(key: str, data: List[Dict[str, Any]]) -> None:
 
 # ─── Users ─────────────────────────────────────────────────────────────────
 
+DEFAULT_ADMIN_USER = {
+    "id": "13fe6db3-7815-42a3-bcb7-982cb0fe3983",
+    "username": "admin",
+    "email": "admin@example.com",
+    "password_hash": "$2b$12$h1xFPStyH5FikkcDVZ92YeOZOPxIIo6ASkLjg4PsMw084Kz1xo1ia",  # bcrypt hash of 'admin123'
+    "role": "admin",
+    "created_at": "2026-09-29T20:16:00.297298Z",
+    "is_active": True,
+    "assigned_servers": [],
+}
+
+
 def get_all_users() -> List[Dict]:
-    return read_json("users")
+    try:
+        users = read_json("users")
+    except Exception as e:
+        logger.warning(f"Error reading users from S3: {e}")
+        users = []
+
+    if not users:
+        try:
+            write_json("users", [DEFAULT_ADMIN_USER])
+            logger.info("Auto-seeded default admin user to S3 users.json")
+        except Exception as e:
+            logger.warning(f"Could not persist auto-seeded admin user to S3: {e}")
+        return [DEFAULT_ADMIN_USER]
+
+    # If users exist but admin is missing, append default admin
+    if not any(u.get("username") == "admin" for u in users):
+        users.append(DEFAULT_ADMIN_USER)
+        try:
+            write_json("users", users)
+            logger.info("Appended default admin user to S3 users.json")
+        except Exception as e:
+            logger.warning(f"Could not persist default admin to S3: {e}")
+
+    return users
 
 
 def get_user_by_username(username: str) -> Optional[Dict]:
-    return next((u for u in get_all_users() if u["username"] == username), None)
+    users = get_all_users()
+    user = next((u for u in users if u.get("username") == username), None)
+    if not user and username == "admin":
+        return DEFAULT_ADMIN_USER
+    return user
 
 
 def get_user_by_id(user_id: str) -> Optional[Dict]:
-    return next((u for u in get_all_users() if u["id"] == user_id), None)
+    users = get_all_users()
+    user = next((u for u in users if u.get("id") == user_id), None)
+    if not user and user_id == DEFAULT_ADMIN_USER["id"]:
+        return DEFAULT_ADMIN_USER
+    return user
 
 
 def create_user(user_data: Dict) -> Dict:

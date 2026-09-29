@@ -51,8 +51,12 @@ async function request(method, path, body) {
   if (res.status === 401) {
     removeToken();
     removeUser();
-    window.location.href = "/login.html";
-    return;
+    const isLoginEndpoint = path === "/api/auth/login";
+    const isLoginPage = typeof window !== "undefined" && (window.location.pathname.endsWith("/login.html") || window.location.pathname === "/");
+    if (!isLoginEndpoint && !isLoginPage) {
+      window.location.href = "/login.html";
+      return;
+    }
   }
 
   const data = await res.json().catch(() => ({}));
